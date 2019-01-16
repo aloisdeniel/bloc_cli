@@ -19,6 +19,7 @@ Future main() async {
 }
 ```
 
+
 ```bash
 Example ----------------------------------
 Streams:
@@ -31,3 +32,5 @@ Type '-exit' to quit
 Type a sink name to send it a value
 ----------------------------------------
 ```
+
+And obviously, each time one of the streams is updated, the view will refresh.

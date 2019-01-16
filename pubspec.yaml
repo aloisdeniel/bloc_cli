@@ -1,10 +1,14 @@
 name: bloc_cli
+version: 0.1.0-dev
+author: Aloïs Deniel <alois.deniel@outlook.com>
+description: Create command line interfaces from your BLoCs.
+homepage: https://github.com/aloisdeniel/bloc_cli
 
 environment:
   sdk: '>=2.0.0 <3.0.0'
 
 dependencies:
-  meta:
+  meta: ^1.1.7
 
 dev_dependencies:
   rxdart:
