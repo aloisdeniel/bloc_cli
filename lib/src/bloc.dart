@@ -1,9 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:bloc_cli/src/bloc_view.dart';
 import 'package:bloc_cli/src/serializers/serializers.dart';
-import 'package:meta/meta.dart';
 
 typedef void Dispatcher(String value);
 
@@ -19,9 +19,8 @@ class BlocCli<TBloc> {
   final String name;
   final String description;
   final Serializers serializers;
-  bool get isRunning => this._isRunning;
+  bool get isRunning => this._completer != null && !this._completer.isCompleted;
 
-  bool _isRunning = false;
   bool get isDisposed => this._isDisposed;
 
   bool _isDisposed = false;
@@ -103,24 +102,34 @@ class BlocCli<TBloc> {
     }
   }
 
-  void requestValue() {
-    final sinkName = stdin.readLineSync()?.trim()?.toLowerCase();
+  Dispatcher _dispatcher;
 
-    if (sinkName == "-exit") {
-      this._isRunning = false;
-    } else if (this._dispatchers.containsKey(sinkName)) {
-      final dispatcher = this._dispatchers[sinkName];
-      this.updateView(
-          this._view.copyWith(status: "Which value do you want to send ?"));
-      final input = stdin.readLineSync()?.trim()?.toLowerCase();
-      dispatcher(input);
-    } else {
-      this.updateView(
-          this._view.copyWith(status: "ERROR: Sink '$sinkName' not found"));
+  Completer _completer;
+
+  void requestValue(String line) {
+    if(this._dispatcher == null) {
+      final sinkName = line?.trim()?.toLowerCase();
+      if (sinkName == "-exit") {
+        this.dispose();
+      } else if (this._dispatchers.containsKey(sinkName)) {
+        _dispatcher = this._dispatchers[sinkName];
+        this.updateView(
+            this._view.copyWith(status: "Which value do you want to send ?"));
+      } else {
+        this.updateView(
+            this._view.copyWith(status: "ERROR: Sink '$sinkName' not found"));
+      }
+    }
+    else {
+      final value = line?.trim()?.toLowerCase();
+      final dispatcher = _dispatcher;
+      this._dispatcher = null;
+      dispatcher(value);
+      
     }
   }
 
-  Future run() async {
+  Future run() {
     if (this.isDisposed) {
       throw Exception("The bloc is disposed");
     }
@@ -131,21 +140,20 @@ class BlocCli<TBloc> {
 
     this._initializers.forEach((init) => init());
 
-    await Future.delayed(Duration.zero);  // This will dequeue awaiting stream callbacks
-
-    this._isRunning = true;
+    this._completer = Completer();
     this.render();
-    while (this.isRunning) {
-      this.requestValue();
-      await Future.delayed(Duration.zero); // This will dequeue awaiting stream callbacks
-    }
 
-    this.dispose();
+    stdin.transform(utf8.decoder).transform(const LineSplitter()).listen((line) {
+      this.requestValue(line);
+    });
+
+    return this._completer.future;
   }
 
   void dispose() {
     this._subscriptions.forEach((s) => s.cancel());
     this._blocDisposer(this.bloc);
+        _completer.complete();
     this._isDisposed = true;
   }
 }

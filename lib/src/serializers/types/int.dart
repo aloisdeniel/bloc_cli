@@ -18,5 +18,4 @@ class IntSerializer extends Serializer<int> {
     }
     return null;
   }
-
 }

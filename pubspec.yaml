@@ -1,5 +1,5 @@
 name: bloc_cli
-version: 0.1.0-dev
+version: 0.1.3-dev
 author: Aloïs Deniel <alois.deniel@outlook.com>
 description: Create command line interfaces from your BLoCs.
 homepage: https://github.com/aloisdeniel/bloc_cli
